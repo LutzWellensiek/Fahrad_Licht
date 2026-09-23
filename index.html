@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#ff0000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Signal Light">
@@ -11,335 +11,422 @@
   <link rel="apple-touch-icon" href="icon-180.png">
   <title>Signal Light</title>
 <style>
-:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;min-height:100%;background:#000;color:#fff}
+:root{
+  color-scheme:dark;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+}
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:none;
+}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#ff0000;
+  color:white;
+}
 body{
-  min-height:100dvh;display:flex;align-items:center;justify-content:center;
-  padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right))
-          max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  min-height:100dvh;
+  position:relative;
+  user-select:none;
+  -webkit-user-select:none;
 }
-body.red{background:#ff0000}
-body.black{background:#000}
-.app{width:min(520px,100%)}
-.panel{
-  background:rgba(24,24,24,.96);border:1px solid rgba(255,255,255,.1);
-  border-radius:26px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.4)
+#redLayer{
+  position:fixed;
+  inset:0;
+  background:#ff0000;
+  z-index:0;
 }
-h1{margin:0 0 5px;font-size:28px}
-.sub{opacity:.62;font-size:14px;line-height:1.4;margin-bottom:22px}
-.section{margin-top:24px}
-.label{font-weight:750;font-size:16px;margin-bottom:10px}
-.segmented{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-button{
-  appearance:none;border:0;border-radius:14px;min-height:48px;padding:10px 8px;
-  background:#2a2a2a;color:#fff;font:inherit;font-weight:750
+#gestureSurface{
+  position:fixed;
+  inset:0;
+  z-index:1;
 }
-button:active{transform:scale(.98)}
-button.active{background:#fff;color:#000}
-button.redbtn.active{background:#ff2424;color:#fff}
-.slider{margin-top:14px;display:grid;grid-template-columns:1fr 70px;gap:12px;align-items:center}
-input[type=range]{width:100%;accent-color:#fff}
-.hz{text-align:right;font-weight:750;font-variant-numeric:tabular-nums}
-.mainbtn{width:100%;min-height:56px;margin-top:22px;background:#fff;color:#000;font-size:17px}
-.status{
-  margin-top:18px;padding:12px 14px;border-radius:14px;background:#101010;
-  font-size:13px;line-height:1.4
+#lockBtn{
+  position:fixed;
+  top:max(14px, env(safe-area-inset-top));
+  right:max(14px, env(safe-area-inset-right));
+  z-index:10;
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.35);
+  background:rgba(0,0,0,.34);
+  color:white;
+  font-size:24px;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
 }
-.note{font-size:12px;opacity:.55;line-height:1.45;margin-top:13px}
-.hidden{display:none!important}
-#lightSurface{position:fixed;inset:0;z-index:1000;background:#000}
-#lightSurface.red{background:#ff0000}
-#lightSurface.black{background:#000}
-video{position:fixed;width:1px;height:1px;opacity:.001;left:-20px;bottom:-20px;pointer-events:none}
+#lockBtn:active{transform:scale(.96)}
+#info{
+  position:fixed;
+  left:50%;
+  bottom:max(14px, env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:10;
+  width:min(92vw,520px);
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(0,0,0,.38);
+  border-radius:16px;
+  padding:11px 13px;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  font-size:12px;
+  line-height:1.35;
+  text-align:center;
+}
+#status{
+  margin-top:4px;
+  opacity:.72;
+  font-size:11px;
+}
+#hud{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  z-index:8;
+  padding:10px 14px;
+  border-radius:14px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.25);
+  font-size:14px;
+  font-weight:700;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .15s ease;
+  text-align:center;
+}
+#hud.show{opacity:1}
+video{
+  position:fixed;
+  width:1px;
+  height:1px;
+  opacity:.001;
+  left:-20px;
+  bottom:-20px;
+  pointer-events:none;
+}
 </style>
 </head>
-<body class="black">
-<main class="app" id="app">
-  <div class="panel">
-    <h1>Signal Light</h1>
-    <div class="sub">Frontlicht über Display und Rücklicht über die iPhone-Taschenlampe.</div>
 
-    <section class="section">
-      <div class="label">Taschenlampe</div>
-      <div class="segmented">
-        <button id="torchOff" class="active">Aus</button>
-        <button id="torchOn">An</button>
-        <button id="torchBlink">Blinken</button>
-      </div>
-      <div class="slider">
-        <input id="torchHz" type="range" min="0.5" max="5" step="0.5" value="2">
-        <div class="hz"><span id="torchHzValue">2</span> Hz</div>
-      </div>
-    </section>
+<body>
+  <div id="redLayer"></div>
+  <div id="gestureSurface"></div>
 
-    <section class="section">
-      <div class="label">Display</div>
-      <div class="segmented">
-        <button id="screenOff" class="active">Aus</button>
-        <button id="screenOn" class="redbtn">Rot</button>
-        <button id="screenBlink" class="redbtn">Blinken</button>
-      </div>
-      <div class="slider">
-        <input id="screenHz" type="range" min="0.5" max="10" step="0.5" value="2">
-        <div class="hz"><span id="screenHzValue">2</span> Hz</div>
-      </div>
-    </section>
+  <button id="lockBtn" aria-label="Bedienung sperren">🔓</button>
 
-    <button id="fullscreen" class="mainbtn">Displaylicht Vollbild</button>
+  <div id="hud"></div>
 
-    <div id="status" class="status">Bereit. Taschenlampe benötigt beim ersten Start Kamerazugriff.</div>
-    <div class="note">
-      Für den LED-Blitz ist HTTPS erforderlich. Die Web-App kann die iPhone-Systemhelligkeit nicht selbst
-      auf 100&nbsp;% stellen; dafür vorher die Displayhelligkeit im Kontrollzentrum ganz hochziehen.
-    </div>
+  <div id="info">
+    ← / → Taschenlampe: langsamer / schneller &nbsp;•&nbsp;
+    ↓ / ↑ Rotlicht: langsamer / schneller<br>
+    Ganz langsam = Dauerlicht
+    <div id="status">Erste Berührung startet die Taschenlampe und fragt nach Kamerazugriff.</div>
   </div>
-</main>
 
-<div id="lightSurface" class="hidden black" aria-label="Vollbildlicht"></div>
-<video id="camera" autoplay playsinline muted></video>
+  <video id="camera" autoplay playsinline muted></video>
 
 <script>
 (() => {
-  const $ = id => document.getElementById(id);
-  const status = $("status");
-  const camera = $("camera");
-  const lightSurface = $("lightSurface");
+  const surface = document.getElementById("gestureSurface");
+  const lockBtn = document.getElementById("lockBtn");
+  const redLayer = document.getElementById("redLayer");
+  const camera = document.getElementById("camera");
+  const status = document.getElementById("status");
+  const hud = document.getElementById("hud");
+
+  let locked = false;
 
   let stream = null;
   let track = null;
-  let torchMode = "off";
-  let screenMode = "off";
+  let torchReady = false;
+
+  // 0 = Dauerlicht, sonst Frequenz in Hz
+  let torchHz = 0;
+  let redHz = 0;
+
   let torchTimer = null;
-  let screenTimer = null;
-  let torchState = false;
-  let screenState = false;
+  let redTimer = null;
+  let torchState = true;
+  let redState = true;
+
   let wakeLock = null;
 
-  const torchButtons = ["torchOff","torchOn","torchBlink"];
-  const screenButtons = ["screenOff","screenOn","screenBlink"];
+  let startX = 0;
+  let startY = 0;
+  let lastX = 0;
+  let lastY = 0;
+  let dragging = false;
 
-  function active(ids, id) {
-    ids.forEach(x => $(x).classList.toggle("active", x === id));
+  const MIN_HZ = 0.5;
+  const MAX_HZ = 12;
+  const PX_PER_STEP = 28;
+
+  async function keepAwake(){
+    try{
+      if("wakeLock" in navigator && !wakeLock){
+        wakeLock = await navigator.wakeLock.request("screen");
+      }
+    }catch(_){}
   }
 
-  async function keepAwake() {
-    try {
-      if ("wakeLock" in navigator && !wakeLock) wakeLock = await navigator.wakeLock.request("screen");
-    } catch (_) {}
-  }
+  async function initTorch(){
+    if(track && track.readyState === "live"){
+      torchReady = true;
+      return true;
+    }
 
-  async function openRearCamera() {
-    if (track && track.readyState === "live") return true;
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      status.textContent = "Dieser Browser unterstützt keinen Kamerazugriff.";
+    if(!navigator.mediaDevices?.getUserMedia){
+      status.textContent = "Kamerazugriff wird von diesem Browser nicht unterstützt.";
       return false;
     }
 
-    try {
-      status.textContent = "Kamerazugriff wird gestartet …";
+    try{
+      status.textContent = "Kamerazugriff wird angefragt …";
+
       stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 640 },
-          height: { ideal: 480 }
+        video:{
+          facingMode:{ideal:"environment"},
+          width:{ideal:640},
+          height:{ideal:480}
         },
-        audio: false
+        audio:false
       });
 
       camera.srcObject = stream;
       track = stream.getVideoTracks()[0];
-      await camera.play().catch(() => {});
+      await camera.play().catch(()=>{});
+
       await keepAwake();
 
-      // Nicht nur auf getCapabilities() verlassen: Safari-Versionen unterscheiden sich.
-      try {
-        await track.applyConstraints({advanced:[{torch:false}]});
-      } catch (_) {}
+      torchReady = true;
+      status.textContent = "Taschenlampe aktiv.";
+      await setTorch(true);
+      startTorchPattern();
 
-      status.textContent = "Taschenlampe bereit.";
       return true;
-    } catch (e) {
-      console.error(e);
-      status.textContent = "Kein Kamerazugriff. Bitte Safari-Berechtigung prüfen und die Seite über HTTPS öffnen.";
-      releaseCamera();
+    }catch(err){
+      console.error(err);
+      status.textContent = "Kamerazugriff erlauben und die Seite über HTTPS öffnen.";
       return false;
     }
   }
 
-  function releaseCamera() {
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    stream = null;
-    track = null;
-    camera.srcObject = null;
-  }
-
-  async function torch(on) {
-    if (!track || track.readyState !== "live") {
-      const ok = await openRearCamera();
-      if (!ok) return false;
-    }
-
-    try {
+  async function setTorch(on){
+    if(!track || track.readyState !== "live") return false;
+    try{
       await track.applyConstraints({advanced:[{torch:!!on}]});
       torchState = !!on;
       return true;
-    } catch (e) {
-      console.error(e);
-      status.textContent = "Die Taschenlampe konnte nicht geschaltet werden: " + e.message;
+    }catch(err){
+      console.error(err);
+      status.textContent = "Die Taschenlampe konnte nicht geschaltet werden.";
       return false;
     }
   }
 
-  function stopTorchBlink() {
-    if (torchTimer) clearInterval(torchTimer);
-    torchTimer = null;
-    torchState = false;
+  function stopTorchTimer(){
+    if(torchTimer){
+      clearInterval(torchTimer);
+      torchTimer = null;
+    }
   }
 
-  function startTorchBlink() {
-    stopTorchBlink();
-    const hz = Number($("torchHz").value);
-    const half = 1000 / (hz * 2);
+  function startTorchPattern(){
+    stopTorchTimer();
+
+    if(!torchReady) return;
+
+    if(torchHz === 0){
+      setTorch(true);
+      return;
+    }
+
+    const half = 1000 / (torchHz * 2);
     torchState = true;
-    torch(true);
-    torchTimer = setInterval(() => {
+    setTorch(true);
+
+    torchTimer = setInterval(()=>{
       torchState = !torchState;
-      torch(torchState);
+      setTorch(torchState);
     }, half);
   }
 
-  async function setTorchMode(mode) {
-    torchMode = mode;
-    stopTorchBlink();
+  function stopRedTimer(){
+    if(redTimer){
+      clearInterval(redTimer);
+      redTimer = null;
+    }
+  }
 
-    if (mode === "off") {
-      active(torchButtons, "torchOff");
-      if (track) {
-        try { await track.applyConstraints({advanced:[{torch:false}]}); } catch (_) {}
+  function setRed(on){
+    redState = !!on;
+    redLayer.style.background = on ? "#ff0000" : "#000000";
+  }
+
+  function startRedPattern(){
+    stopRedTimer();
+
+    if(redHz === 0){
+      setRed(true);
+      return;
+    }
+
+    const half = 1000 / (redHz * 2);
+    redState = true;
+    setRed(true);
+
+    redTimer = setInterval(()=>{
+      setRed(!redState);
+    }, half);
+  }
+
+  function hzLabel(hz){
+    return hz === 0 ? "Dauerlicht" : hz.toFixed(hz % 1 ? 1 : 0) + " Hz";
+  }
+
+  function showHud(text){
+    hud.textContent = text;
+    hud.classList.add("show");
+    clearTimeout(showHud.t);
+    showHud.t = setTimeout(()=>hud.classList.remove("show"), 700);
+  }
+
+  function increaseHz(current, direction){
+    // direction +1 = schneller, -1 = langsamer
+    if(direction > 0){
+      if(current === 0) return MIN_HZ;
+      return Math.min(MAX_HZ, Math.round((current + 0.5) * 2) / 2);
+    }else{
+      if(current === 0) return 0;
+      const next = Math.round((current - 0.5) * 2) / 2;
+      return next < MIN_HZ ? 0 : next;
+    }
+  }
+
+  function handleDelta(dx, dy){
+    if(locked) return;
+
+    // dominante Achse entscheidet
+    if(Math.abs(dx) > Math.abs(dy)){
+      const steps = Math.floor(Math.abs(dx) / PX_PER_STEP);
+      if(steps < 1) return;
+
+      const dir = dx > 0 ? +1 : -1;
+      for(let i=0;i<steps;i++){
+        torchHz = increaseHz(torchHz, dir);
       }
-      releaseCamera();
-      status.textContent = "Taschenlampe aus.";
-      return;
-    }
 
-    const ok = await openRearCamera();
-    if (!ok) {
-      torchMode = "off";
-      active(torchButtons, "torchOff");
-      return;
-    }
+      lastX += steps * PX_PER_STEP * (dx > 0 ? 1 : -1);
+      showHud("Taschenlampe: " + hzLabel(torchHz));
+      startTorchPattern();
 
-    if (mode === "on") {
-      active(torchButtons, "torchOn");
-      if (await torch(true)) status.textContent = "Taschenlampe konstant an.";
-    } else {
-      active(torchButtons, "torchBlink");
-      startTorchBlink();
-      status.textContent = "Taschenlampe blinkt.";
-    }
-  }
+    }else{
+      const steps = Math.floor(Math.abs(dy) / PX_PER_STEP);
+      if(steps < 1) return;
 
-  function paintScreen(on) {
-    screenState = !!on;
-    if (!lightSurface.classList.contains("hidden")) {
-      lightSurface.classList.toggle("red", on);
-      lightSurface.classList.toggle("black", !on);
-    } else {
-      document.body.classList.toggle("red", on);
-      document.body.classList.toggle("black", !on);
+      // nach oben = schneller, nach unten = langsamer
+      const dir = dy < 0 ? +1 : -1;
+      for(let i=0;i<steps;i++){
+        redHz = increaseHz(redHz, dir);
+      }
+
+      lastY += steps * PX_PER_STEP * (dy > 0 ? 1 : -1);
+      showHud("Rotlicht: " + hzLabel(redHz));
+      startRedPattern();
     }
   }
 
-  function stopScreenBlink() {
-    if (screenTimer) clearInterval(screenTimer);
-    screenTimer = null;
-  }
-
-  function startScreenBlink() {
-    stopScreenBlink();
-    const hz = Number($("screenHz").value);
-    const half = 1000 / (hz * 2);
-    paintScreen(true);
-    screenTimer = setInterval(() => paintScreen(!screenState), half);
-  }
-
-  function setScreenMode(mode) {
-    screenMode = mode;
-    stopScreenBlink();
-    keepAwake();
-
-    if (mode === "off") {
-      active(screenButtons, "screenOff");
-      paintScreen(false);
-    } else if (mode === "on") {
-      active(screenButtons, "screenOn");
-      paintScreen(true);
-    } else {
-      active(screenButtons, "screenBlink");
-      startScreenBlink();
+  async function beginGesture(x,y){
+    if(!torchReady){
+      await initTorch();
     }
+
+    startX = lastX = x;
+    startY = lastY = y;
+    dragging = true;
   }
 
-  $("torchOff").onclick = () => setTorchMode("off");
-  $("torchOn").onclick = () => setTorchMode("on");
-  $("torchBlink").onclick = () => setTorchMode("blink");
+  function moveGesture(x,y){
+    if(!dragging) return;
+    handleDelta(x - lastX, y - lastY);
+  }
 
-  $("screenOff").onclick = () => setScreenMode("off");
-  $("screenOn").onclick = () => setScreenMode("on");
-  $("screenBlink").onclick = () => setScreenMode("blink");
+  function endGesture(){
+    dragging = false;
+  }
 
-  $("torchHz").oninput = e => {
-    $("torchHzValue").textContent = e.target.value;
-    if (torchMode === "blink") startTorchBlink();
-  };
+  surface.addEventListener("touchstart", async e=>{
+    if(e.touches.length !== 1) return;
+    const t = e.touches[0];
+    await beginGesture(t.clientX, t.clientY);
+  }, {passive:false});
 
-  $("screenHz").oninput = e => {
-    $("screenHzValue").textContent = e.target.value;
-    if (screenMode === "blink") startScreenBlink();
-  };
+  surface.addEventListener("touchmove", e=>{
+    if(e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    moveGesture(t.clientX, t.clientY);
+  }, {passive:false});
 
-  $("fullscreen").onclick = async () => {
-    lightSurface.classList.remove("hidden");
-    await keepAwake();
-    if (screenMode === "off") {
-      screenMode = "on";
-      active(screenButtons, "screenOn");
-      paintScreen(true);
-    } else if (screenMode === "on") {
-      paintScreen(true);
-    } else {
-      startScreenBlink();
-    }
-  };
+  surface.addEventListener("touchend", endGesture, {passive:false});
+  surface.addEventListener("touchcancel", endGesture, {passive:false});
 
-  // Im Vollbild reicht ein Tipp irgendwo auf das Display, um zurückzugehen.
-  lightSurface.onclick = () => {
-    lightSurface.classList.add("hidden");
-    if (screenMode === "on") paintScreen(true);
-    else if (screenMode === "off") paintScreen(false);
-    else startScreenBlink();
-  };
+  surface.addEventListener("pointerdown", async e=>{
+    if(e.pointerType === "touch") return;
+    await beginGesture(e.clientX, e.clientY);
+  });
 
-  document.addEventListener("visibilitychange", async () => {
-    if (document.visibilityState === "visible") {
+  surface.addEventListener("pointermove", e=>{
+    if(e.pointerType === "touch") return;
+    moveGesture(e.clientX, e.clientY);
+  });
+
+  surface.addEventListener("pointerup", endGesture);
+  surface.addEventListener("pointercancel", endGesture);
+
+  lockBtn.addEventListener("click", e=>{
+    e.stopPropagation();
+    locked = !locked;
+    lockBtn.textContent = locked ? "🔒" : "🔓";
+    lockBtn.setAttribute("aria-label", locked ? "Bedienung entsperren" : "Bedienung sperren");
+    showHud(locked ? "Bedienung gesperrt" : "Bedienung entsperrt");
+  });
+
+  document.addEventListener("visibilitychange", async ()=>{
+    if(document.visibilityState === "visible"){
       await keepAwake();
-      if (torchMode === "blink" && track) startTorchBlink();
-      if (screenMode === "blink") startScreenBlink();
+      startRedPattern();
+      if(torchReady) startTorchPattern();
     }
   });
 
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-  }
+  window.addEventListener("pagehide", ()=>{
+    stopTorchTimer();
+    stopRedTimer();
 
-  window.addEventListener("pagehide", () => {
-    stopTorchBlink();
-    stopScreenBlink();
-    if (track) track.applyConstraints({advanced:[{torch:false}]}).catch(()=>{});
-    releaseCamera();
+    if(track){
+      track.applyConstraints({advanced:[{torch:false}]}).catch(()=>{});
+    }
+
+    if(stream){
+      stream.getTracks().forEach(t=>t.stop());
+    }
   });
+
+  // Rotlicht ist sofort dauerhaft an.
+  startRedPattern();
+  keepAwake();
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=>{
+      navigator.serviceWorker.register("./sw.js").catch(()=>{});
+    });
+  }
 })();
 </script>
 </body>
